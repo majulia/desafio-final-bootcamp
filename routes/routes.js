@@ -1,6 +1,8 @@
 const express = require('express');
 const transactionRouter = express.Router();
 
+const service = require('../services/transactionService')
+
 transactionRouter.get('/', async (request, response) => {
   const { query } = request
 
@@ -17,9 +19,11 @@ transactionRouter.get('/', async (request, response) => {
         (`Período Inválido. Use yyyy-mm`)
     }
 
+    const filteredTransactions = await service.getTransactionsFrom(period)
+
     response.send({
-      length: 2,
-      transactions: ['transaction1', 'transaction2'],
+      length: filteredTransactions.length,
+      transactions: filteredTransactions,
     })
 
   } catch ({ message }) {
@@ -90,7 +94,6 @@ transactionRouter.delete('/:id', async (request, response) => {
   const { params } = request
 
   try {
-   
     
     response.send({
       status: 'Ok',
