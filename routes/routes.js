@@ -41,8 +41,27 @@ transactionRouter.post('/', async (request, response) => {
         (`Conteúdo inválido ou inexistente`)
     }
 
+    const { description, value, category, year, month, day, type } = body
+    const yearMonth = `${year}-${month.toString().padStart(2, '0')}`
+    const yearMonthDay = `${yearMonth}-${day.toString().padStart(2, '0')}`
+
+    const postTransaction = {
+      description,
+      value,
+      category,
+      year,
+      month,
+      day,
+      yearMonth,
+      yearMonthDay: '',
+      type
+    }
+
+    const newTransaction = await service.postTransaction(postTransaction)
+
     response.send({
       status: 'Ok',
+      transaction: newTransaction,
     })
 
   } catch ({ message }) {
@@ -53,8 +72,8 @@ transactionRouter.post('/', async (request, response) => {
 
 transactionRouter.put('/', async (request, response) => {
   try {
-    
-    throw new Error ('Id inexistente')
+
+    throw new Error('Id inexistente')
   } catch ({ message }) {
     console.log(message)
     response.status(400).send({ error: message })
@@ -70,8 +89,28 @@ transactionRouter.put('/:id', async (request, response) => {
         (`Conteúdo inválido ou inexistente`)
     }
 
+    const { description, value, category, year, month, day, type } = body
+    const { id } = params
+    const yearMonth = `${year}-${month.toString().padStart(2, '0')}`
+    const yearMonthDay = `${yearMonth}-${day.toString().padStart(2, '0')}`
+
+    const updateTransaction = {
+      description,
+      value,
+      category,
+      year,
+      month,
+      day,
+      yearMonth,
+      yearMonthDay: '',
+      type
+    }
+
+    const updatedTransaction = await service.updateTransaction(id, updateTransaction)
+
     response.send({
       status: 'Ok',
+      transaction: updatedTransaction,
     })
 
   } catch ({ message }) {
@@ -82,8 +121,8 @@ transactionRouter.put('/:id', async (request, response) => {
 
 transactionRouter.delete('/', async (request, response) => {
   try {
-    
-    throw new Error ('Id inexistente')
+
+    throw new Error('Id inexistente')
   } catch ({ message }) {
     console.log(message)
     response.status(400).send({ error: message })
@@ -94,11 +133,18 @@ transactionRouter.delete('/:id', async (request, response) => {
   const { params } = request
 
   try {
-    
-    response.send({
-      status: 'Ok',
-    })
+    const { id } = params
 
+    const didDelete = await service.deleteTransaction(id)
+
+    if (didDelete) {
+      response.send({
+        status: 'Ok',
+        message: `Lançamento de ${id} excluído com sucesso!`
+      })
+    } else {
+      throw new Error(`Não foi possível excluir`)
+    }
   } catch ({ message }) {
     console.log(message)
     response.status(400).send({ error: message })
