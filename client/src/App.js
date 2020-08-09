@@ -1,7 +1,8 @@
-import React, { useEffect } from 'react';
-import axios from 'axios';
-import ListScreen from './components/ListScreen';
-import MaintenanceScreen from './components/MaintenanceScreen';
+import React, { useState, useEffect } from 'react'
+import axios from 'axios'
+import ListScreen from './components/ListScreen'
+import MaintenanceScreen from './components/MaintenanceScreen'
+
 
 const api = axios.create({ baseURL: 'api' })
 const RESOURCE = '/transaction'
@@ -44,102 +45,158 @@ const PERIODS = [
   '2021-11',
   '2021-12',
 ]
+
 const LIST_SCREEN = 0
 const MAINTENANCE_SCREEN = 1
 
 export default function App() {
-  const [transactions, setTransactions] = React.useState([])
-  const [filteredTransactions, setFilteredTransactions] = React.useState([])
-  const [currentPeriod, setCurrentPeriod] = React.useState(PERIODS[0])
-  const [currentScreen, setCurrentScreen] = React.useState(LIST_SCREEN)
-  const [filteredText, setFilteredText] = React.useState('')
-  const [selectedTransaction, setSelectedTransaction] = React.useState(null)
+  const [transactions, setTransactions] = useState([])
+  const [filteredTransactions, setFilteredTransactions] = useState([])
+  const [currentPeriod, setCurrentPeriod] = useState(PERIODS[0])
+  const [currentScreen, setCurrentScreen] = useState(LIST_SCREEN)
+  const [filteredText, setFilteredText] = useState('')
+  const [selectedTransaction, setSelectedTransaction] = useState(null)
+  const [newTransaction, setNewTransaction] = useState(false)
 
-  React.useEffect(() => {
+  useEffect(() => {
     const fetchTransactions = async () => {
       const { data } = await api.get(`/transaction?period=${currentPeriod}`)
 
       setTransactions(data.transactions)
     }
+
     fetchTransactions()
   }, [currentPeriod])
 
-  //exibindo lista depois de item removido
-  React.useEffect(() => {
-    let newfilteredTransactions = [...transactions]
+  useEffect(() => {
+    let newFilteredTransactions = [...transactions]
 
     if (filteredText.trim() !== '') {
-      newfilteredTransactions = newfilteredTransactions.filter((transaction) => {
-        return transaction.description.toLowerCase().includes(filteredText)
-      }
+      newFilteredTransactions = newFilteredTransactions.filter(
+        (transaction) => {
+          return transaction.description.toLowerCase().includes(filteredText)
+        }
       )
     }
 
-    setFilteredTransactions(newfilteredTransactions)
+    setFilteredTransactions(newFilteredTransactions)
   }, [transactions, filteredText])
 
-  React.useEffect(() => {
-    const newScreen = selectedTransaction !== null ? MAINTENANCE_SCREEN : LIST_SCREEN
+  useEffect(() => {
+    const newScreen =
+      selectedTransaction !== null || newTransaction
+        ? MAINTENANCE_SCREEN
+        : LIST_SCREEN
 
     setCurrentScreen(newScreen)
-  }, [selectedTransaction])
+  }, [selectedTransaction, newTransaction])
 
-  //Mudando as datas do select
   const handlePeriodChange = (e) => {
-    const newPeriod = e.target.value;
+    const newPeriod = e.target.value
     setCurrentPeriod(newPeriod)
   }
 
-  //função onclick deletando dados
   const handleDeleteTransaction = async (e) => {
     const id = e.target.id
 
     await api.delete(`${RESOURCE}/${id}`)
 
-    const newTransactions = transactions.filter(transaction => {
+    const newTransactions = transactions.filter((transaction) => {
       return transaction._id !== id
     })
 
     setTransactions(newTransactions)
   }
 
-  // Editar campos
   const handleEditTransaction = async (e) => {
     const id = e.target.id
 
     const newSelectedTransaction = filteredTransactions.find((transaction) => {
-      return transaction._id === id 
+      return transaction._id === id
     })
-
-    console.log(newSelectedTransaction)
 
     setSelectedTransaction(newSelectedTransaction)
   }
 
-  //Filtrando input
+  const handleNewTransaction = async () => {
+    setNewTransaction(true)
+  }
+
   const handleFilterChange = (e) => {
     const text = e.target.value.trim()
     setFilteredText(text.toLowerCase())
   }
 
+  const handleCancelEdit= () => {
+    setNewTransaction(false)
+    setSelectedTransaction(null)
+  }
+
+  const handleSaveEdit = async (newTransaction) => {
+    console.log(newTransaction)
+    const { _id } = newTransaction
+
+    if (!_id) {
+      const insertedTransaction = {
+        ...newTransaction,
+        year: Number(newTransaction.yearMonthDay.substring(0, 4)),
+        month: Number(newTransaction.yearMonthDay.substring(5, 7)),
+        day: Number(newTransaction.yearMonthDay.substring(8, 10)),
+      }
+
+      const { data } = await api.post(`${RESOURCE}`, insertedTransaction)
+
+      const newTransactions = [...transactions, data.transaction]
+      newTransactions.sort((a, b) =>
+        a.yearMonthDay.localeCompare(b.yearMonthDay)
+      )
+
+      setTransactions(newTransactions)
+      setNewTransaction(false)
+    } else {
+      const editedTransaction = {
+        ...newTransaction,
+        year: Number(newTransaction.yearMonthDay.substring(0, 4)),
+        month: Number(newTransaction.yearMonthDay.substring(5, 7)),
+        day: Number(newTransaction.yearMonthDay.substring(8, 10)),
+      }
+
+      await api.put(`${RESOURCE}/${_id}`, editedTransaction)
+
+      const newTransactions = [...transactions]
+      const index = newTransactions.findIndex((transaction) => {
+        return transaction._id === editedTransaction._id
+      })
+      newTransactions[index] = editedTransaction
+
+      setTransactions(newTransactions)
+      setSelectedTransaction(null)
+    }
+  }
+
   return (
     <div className='container'>
       <h1 className='center'>Desafio Final do Bootcamp Full Stack</h1>
-      {
-        currentScreen === LIST_SCREEN ? (
-          <ListScreen transactions={filteredTransactions}
-            periods={PERIODS}
-            currentPeriod={currentPeriod}
-            filteredText={filteredText}
-            onDeleteTransaction={handleDeleteTransaction}
-            onEditTransaction={handleEditTransaction}
-            onFilterChange={handleFilterChange}
-            onPeriodChange={handlePeriodChange}
-          />
-        ) : (
-          <MaintenanceScreen />
-          )
-      }
+
+      {currentScreen === LIST_SCREEN ? (
+        <ListScreen
+          transactions={filteredTransactions}
+          periods={PERIODS}
+          currentPeriod={currentPeriod}
+          filteredText={filteredText}
+          onDeleteTransaction={handleDeleteTransaction}
+          onEditTransaction={handleEditTransaction}
+          onNewTransaction={handleNewTransaction}
+          onFilterChange={handleFilterChange}
+          onPeriodChange={handlePeriodChange}
+        />
+      ) : (
+        <MaintenanceScreen
+          transaction={selectedTransaction}
+          onCancel={handleCancelEdit}
+          onSave={handleSaveEdit}
+        />
+      )}
     </div>
   )
 }

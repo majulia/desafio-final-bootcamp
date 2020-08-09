@@ -10,6 +10,7 @@ export default function ListScreen({ transactions,
   currentPeriod,
   onDeleteTransaction,
   onEditTransaction,
+  onNewTransaction,
   onFilterChange,
   onPeriodChange,
 }) {
@@ -25,7 +26,11 @@ export default function ListScreen({ transactions,
         })}
       </select>
 
-      <input type="text" placeholder="Filtro" value={filteredText} onChange={onFilterChange} />
+      <input type="text" placeholder="Filtro" value={filteredText} onChange={onFilterChange} style ={{marginTop: '20px'}}/>
+
+      <div style ={{marginTop: '20px', marginBottom: '20px'}} >
+        <button className='waves-effect waves-light btn' onClick={onNewTransaction}>Novo lançamento</button>
+      </div>
 
       {
         transactions.map((transaction) => {
@@ -33,16 +38,18 @@ export default function ListScreen({ transactions,
 
           return (
             <div key={transaction._id} style={{ ...transactionStyle, backgroundColor: currentColor }}>
+              
               <span style={buttonsStyle}>
                 <button onClick={onEditTransaction}
                   className='wave-effect waves-light btn' id={transaction._id}>Editar</button>
 
-                <button className='wave-effect waves-light btn red darken-4' onClick={onDeleteTransaction} id={transaction._id}>X</button>
+                <button className='wave-effect waves-light btn red darken-4' onClick={onDeleteTransaction} id={transaction._id} style={{ marginLeft: '10px' }}>X</button>
               </span>
-              <span>
-                {transaction.yearMonthDay} -
-             <span style={{ fontWeight: "bold" }}> {transaction.category} </span> - {transaction.description} - {transaction.value}
-              </span>
+
+              {transaction.yearMonthDay} -{' '}
+              <strong>{transaction.category}</strong> -{' '}
+              {transaction.description} - {transaction.value}
+
             </div>
           )
         })}
