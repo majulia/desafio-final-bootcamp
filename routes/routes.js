@@ -9,7 +9,7 @@ transactionRouter.get('/', async (request, response) => {
   try {
     if (!query.period) {
       throw new Error
-        (`É necessário informar o parâmetro "período", cujo valor deve estar no formato yyyy-mm`)
+        (`É necessário informar o parâmetro "período" no formato yyyy-mm`)
     }
 
     const { period } = query
@@ -53,7 +53,7 @@ transactionRouter.post('/', async (request, response) => {
       month,
       day,
       yearMonth,
-      yearMonthDay: '',
+      yearMonthDay,
       type
     }
 
@@ -102,7 +102,7 @@ transactionRouter.put('/:id', async (request, response) => {
       month,
       day,
       yearMonth,
-      yearMonthDay: '',
+      yearMonthDay,
       type
     }
 
